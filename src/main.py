@@ -1,11 +1,8 @@
 import numpy as np
 import PIL
 from PIL.Image import Image
-import tensorflow as tf
 import keras
-import keras.backend as BE
-from channel_focus2d import ChannelFocus2D
-from unit_focus2d import UnitFocus2D
+from layers.channel_focus2d import ChannelFocus2D
 
 FILE_PATHS = ("./data/1.png", "./data/2.png")
 IMG_MAP = ["_", " "]

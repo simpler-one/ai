@@ -1,5 +1,5 @@
 import tensorflow as tf
-from base_focus2d import BaseFocus2D
+from layers.base_focus2d import BaseFocus2D
 
 INT32 = "int32"
 
