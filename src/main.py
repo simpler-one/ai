@@ -5,10 +5,10 @@ import tensorflow as tf
 import keras
 import keras.backend as BE
 from channel_focus2d import ChannelFocus2D
-from batch_focus2d import BatchFocus2D
+from unit_focus2d import UnitFocus2D
 
 FILE_PATHS = ("./data/1.png", "./data/2.png")
-IMG_MAP = [" ", "*"]
+IMG_MAP = ["_", " "]
 
 
 def main():
@@ -22,26 +22,27 @@ def main():
         # print((min_x, min_y), (max_x, max_y))
 
     img_in = np.array(images)
-    img_tensor = BE.constant(img_in)
-    focus = BatchFocus2D()
-    focus.build(img_in.shape)
-    out_tensor = focus.call(img_tensor)
-    session = tf.Session()
+    # img_tensor = BE.constant(img_in)
+    # focus = UnitFocus2D()
+    # focus.build(img_in.shape)
+    # out_tensor = focus.call(img_tensor)
+    # session = tf.Session()
+    #
+    # img_out = session.run(out_tensor)
 
-    out_tensor = session.run(out_tensor)
-    for b in out_tensor:
+    model = keras.models.Sequential([
+        ChannelFocus2D(),
+    ])
+    model.compile(optimizer="adam", loss="mse", metrics=["acc"])
+    img_out = model.predict(img_in)
+
+    for b in img_out:
         out_img = b[:, :, 0]
 
         print("--image--")
         for r in out_img:
             print("".join([IMG_MAP[v] for v in np.round(r / 255).astype("int32")]))
         print()
-
-    # model = keras.models.Sequential([
-    #     Focus2D()
-    # ])
-    # model.compile(optimizer="adam", loss="mse", metrics=["acc"])
-    # model.predict(img[None, :, :, None])
 
 
 def detect_rect(img, padding=3):
