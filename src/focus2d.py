@@ -7,7 +7,7 @@ INT32 = "int32"
 
 
 class Focus2D(keras.layers.Layer):
-    def __init__(self, *, threshold=0.5, padding=3, **kwargs):
+    def __init__(self, *, threshold=0.5, padding=3, ignore_size=(5, 5), **kwargs):
         """
         :param float threshold: (0.0-1.0)
         :param int padding: (0-)
@@ -15,6 +15,7 @@ class Focus2D(keras.layers.Layer):
         super().__init__(**kwargs)
         self._shift = threshold - 0.5
         self._pad = padding
+        self._ignore_size = ignore_size
 
         self._wid = 0
         self._hgt = 0
@@ -36,21 +37,39 @@ class Focus2D(keras.layers.Layer):
     def call(self, inputs, **kwargs):
         in_tensor = inputs if isinstance(inputs, tf.Tensor) else inputs[0]
         (x_min, y_min), (x_max, y_max) = self._detect_rect(in_tensor)
-        # TODO:
 
-        return in_tensor
+        # TODO: avoid all zero
+        normal_zoom_wid = self._wid - self._pad * 2
+        normal_zoom_hgt = self._hgt - self._pad * 2
+
+        batch_out = [None] * in_tensor.shape[0]
+        for b in range(in_tensor.shape[0]):
+            channel_out = [None] * in_tensor.shape[3]
+            for c in range(in_tensor.shape[3]):
+                trimmed = in_tensor[b:b+1, y_min[b, c]:y_max[b, c], x_min[b, c]:x_max[b, c], c:c+1]
+                zoom_wid = max(normal_zoom_wid, trimmed.shape[2])
+                zoom_hgt = max(normal_zoom_hgt, trimmed.shape[1])
+
+                resized = tf.image.resize_images(trimmed, (zoom_hgt, zoom_wid), preserve_aspect_ratio=True)
+                resized = tf.image.resize_with_crop_or_pad(resized, self._hgt, self._wid)
+                channel_out[c] = resized
+
+            batch_out[b] = tf.concat(channel_out, axis=3)
+
+        return tf.concat(batch_out, axis=0)
 
     def get_config(self):
         return {
             "threshold": self._shift + 0.5,
             "padding": self._pad,
+            "ignore_size": self._ignore_size
         }
 
     def compute_output_shape(self, input_shape):
         return input_shape
 
     def _detect_rect(self, tensor):
-        # (n, Y, X, C)
+        # (Batch, Y, X, Channel)
         x_scan = tf.reduce_max(tensor, axis=1)
         y_scan = tf.reduce_max(tensor, axis=2)
         x_scan = tf.cast(tf.math.round(tf.math.sigmoid(x_scan) + self._shift), INT32)  # 0 or 1
@@ -61,7 +80,4 @@ class Focus2D(keras.layers.Layer):
         x_max = tf.argmax(x_scan * self._x_max_weight, axis=1, output_type=INT32)
         y_max = tf.argmax(y_scan * self._y_max_weight, axis=1, output_type=INT32)
 
-        return (
-            (tf.maximum(0, x_min - self._pad), tf.maximum(0, y_min - self._pad)),
-            (tf.minimum(x_max + self._pad, self._wid - 1), tf.minimum(y_max + self._pad, self._hgt - 1))
-        )
+        return (x_min, y_min), (x_max, y_max)

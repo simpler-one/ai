@@ -1,6 +1,7 @@
 import numpy as np
 import PIL
 from PIL.Image import Image
+import tensorflow as tf
 import keras
 import keras.backend as BE
 from focus2d import Focus2D
@@ -19,7 +20,11 @@ def main():
     img_tensor = BE.constant(img[np.newaxis, :, :, np.newaxis])
     focus = Focus2D()
     focus.build((-1,) + img.shape + (1,))
-    focus.call(img_tensor)
+    out_tensor = focus.call(img_tensor)
+    session = tf.Session()
+    out_img = session.run(out_tensor)[0, :, :, 0]
+    for r in out_img:
+        print(np.round(r / 255).astype("int32").tolist())
 
     # model = keras.models.Sequential([
     #     Focus2D()
