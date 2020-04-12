@@ -4,27 +4,38 @@ from PIL.Image import Image
 import tensorflow as tf
 import keras
 import keras.backend as BE
-from focus2d import Focus2D
+from channel_focus2d import ChannelFocus2D
+from batch_focus2d import BatchFocus2D
 
-FILE_PATH = "./data/1.png"
+FILE_PATHS = ("./data/1.png", "./data/2.png")
+IMG_MAP = [" ", "*"]
 
 
 def main():
-    pil_image: Image = PIL.Image.open(FILE_PATH)
-    img = np.asarray(pil_image)[:, :, 0]
-    img = img.reshape(img.shape[:2])
+    images = []
+    for path in FILE_PATHS:
+        pil_image: Image = PIL.Image.open(path)
+        img = np.asarray(pil_image.convert("RGB"))
+        images.append(img)
 
-    (min_x, min_y), (max_x, max_y) = detect_rect(img)
-    print((min_x, min_y), (max_x, max_y))
+        # (min_x, min_y), (max_x, max_y) = detect_rect(img)
+        # print((min_x, min_y), (max_x, max_y))
 
-    img_tensor = BE.constant(img[np.newaxis, :, :, np.newaxis])
-    focus = Focus2D()
-    focus.build((-1,) + img.shape + (1,))
+    img_in = np.array(images)
+    img_tensor = BE.constant(img_in)
+    focus = BatchFocus2D()
+    focus.build(img_in.shape)
     out_tensor = focus.call(img_tensor)
     session = tf.Session()
-    out_img = session.run(out_tensor)[0, :, :, 0]
-    for r in out_img:
-        print(np.round(r / 255).astype("int32").tolist())
+
+    out_tensor = session.run(out_tensor)
+    for b in out_tensor:
+        out_img = b[:, :, 0]
+
+        print("--image--")
+        for r in out_img:
+            print("".join([IMG_MAP[v] for v in np.round(r / 255).astype("int32")]))
+        print()
 
     # model = keras.models.Sequential([
     #     Focus2D()
