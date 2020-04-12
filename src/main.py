@@ -1,6 +1,9 @@
 import numpy as np
 import PIL
 from PIL.Image import Image
+import keras
+import keras.backend as BE
+from focus2d import Focus2D
 
 FILE_PATH = "./data/1.png"
 
@@ -11,7 +14,18 @@ def main():
     img = img.reshape(img.shape[:2])
 
     (min_x, min_y), (max_x, max_y) = detect_rect(img)
-    print(min_x, min_y, max_x, max_y)
+    print((min_x, min_y), (max_x, max_y))
+
+    img_tensor = BE.constant(img[np.newaxis, :, :, np.newaxis])
+    focus = Focus2D()
+    focus.build((-1,) + img.shape + (1,))
+    focus.call(img_tensor)
+
+    # model = keras.models.Sequential([
+    #     Focus2D()
+    # ])
+    # model.compile(optimizer="adam", loss="mse", metrics=["acc"])
+    # model.predict(img[None, :, :, None])
 
 
 def detect_rect(img, padding=3):
