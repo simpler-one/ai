@@ -27,9 +27,8 @@ class UnitFocus2D(BaseFocus2D):
             zoom_wid = max(normal_zoom_wid, trimmed.shape[2])
             zoom_hgt = max(normal_zoom_hgt, trimmed.shape[1])
 
-            resized = tf.image.resize_images(trimmed, (zoom_hgt, zoom_wid), preserve_aspect_ratio=True)
-            resized = tf.image.resize_with_crop_or_pad(resized, self._hgt, self._wid)
-            return resized
+            resized = tf.image.resize(trimmed, (zoom_hgt, zoom_wid), preserve_aspect_ratio=True)
+            return tf.image.resize_with_crop_or_pad(resized, self._hgt, self._wid)
 
         return tf.map_fn(unit_loop, in_tensor)
 

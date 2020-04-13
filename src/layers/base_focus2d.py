@@ -37,6 +37,7 @@ class BaseFocus2D(keras.layers.Layer, ABC):
 
     def get_config(self):
         return {
+            **super().get_config(),
             "threshold": self._shift + 0.5,
             "padding": self._pad,
             "ignore_size": self._ignore_size
