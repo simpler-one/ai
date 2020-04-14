@@ -1,6 +1,7 @@
 import numpy as np
 import PIL
 from PIL.Image import Image
+import tensorflow as tf
 import keras
 from layers.channel_focus2d import ChannelFocus2D
 
@@ -15,18 +16,12 @@ def main():
         img = np.asarray(pil_image.convert("RGB"))
         images.append(img)
 
-        # (min_x, min_y), (max_x, max_y) = detect_rect(img)
-        # print((min_x, min_y), (max_x, max_y))
+        (min_x, max_x), (min_y, max_y) = detect_rect(img[:, :, 0])
+        print((min_x, max_x), (min_y, max_y))
+
+        x_weights, y_weights = create_focus_weights((img.shape[1], img.shape[0]), (min_x, max_x), (min_y, max_y))
 
     img_in = np.array(images)
-    # img_tensor = BE.constant(img_in)
-    # focus = UnitFocus2D()
-    # focus.build(img_in.shape)
-    # out_tensor = focus.call(img_tensor)
-    # session = tf.Session()
-    #
-    # img_out = session.run(out_tensor)
-
     model = keras.models.Sequential([
         ChannelFocus2D(),
     ])
@@ -67,8 +62,39 @@ def detect_rect(img, padding=3):
     x_max = np.argmax(x_scan * x_max_weight)
     y_max = np.argmax(y_scan * y_max_weight)
 
-    return (max(0, x_min - padding), max(0, y_min - padding)), \
-           (min(x_scan.shape[0], x_max + padding), min(y_scan.shape[0], y_max + padding))
+    return (max(0, x_min - padding), min(x_scan.shape[0], x_max + padding)), \
+           (max(0, y_min - padding), min(y_scan.shape[0], y_max + padding))
+
+
+def create_focus_weights(org_size, x_range, y_range, padding=3):
+    """
+
+    :param (int, int) org_size:
+    :param (int, int) x_range:
+    :param (int, int) y_range:
+    :param int padding:
+    :return:
+    """
+    org_w, org_h = org_size
+    min_x, max_x = x_range
+    min_y, max_y = y_range
+
+    trim_w = max_x - min_x
+    trim_h = max_y - min_y
+    zoom = min(org_w / trim_w, org_h / trim_h)
+
+    margin_x = round((org_w / zoom - trim_w) / 2) + padding
+    margin_y = round((org_h / zoom - trim_h) / 2) + padding
+
+    x_weights = np.zeros((org_w, org_w))
+    for x in range(margin_x, org_w - margin_x):
+        x_weights[x, min_x + round(x * zoom)] = 1.0  # one hot
+
+    y_weights = np.zeros((org_h, org_h))
+    for y in range(margin_y, org_h - margin_y):
+        y_weights[y, min_y + round(y * zoom)] = 1.0  # one hot
+
+    return x_weights, y_weights
 
 
 # ----------
