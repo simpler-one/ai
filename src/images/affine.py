@@ -2,15 +2,16 @@ import numpy as np
 
 
 def transform(image, affine_matrix):
-    length = np.max(image.shape)
-    half_len = length / 2
-    x = np.tile(np.linspace(-half_len, half_len, length).reshape(1, -1), (length, 1))
-    y = np.tile(np.linspace(-half_len, half_len, length).reshape(-1, 1), (1, length))
+    height, width = image.shape[:2]
+    half_w = width / 2
+    half_h = height / 2
+    x = np.tile(np.linspace(-half_w, half_w, width).reshape(1, -1), (height, 1))
+    y = np.tile(np.linspace(-half_h, half_h, height).reshape(-1, 1), (1, width))
     xy = np.array([[x, y, np.ones(x.shape)]])
 
     dx, dy, _ = np.sum(xy * affine_matrix[..., None, None], axis=1)
-    x_index = np.clip(dx + half_len, 0, length - 1).astype('i')
-    y_index = np.clip(dy + half_len, 0, length - 1).astype('i')
+    x_index = np.clip(dx + half_w, 0, width - 1).astype('i')
+    y_index = np.clip(dy + half_h, 0, height - 1).astype('i')
     return image[y_index, x_index]
 
 

@@ -61,8 +61,8 @@ class IrregularSymbolGenerator:
             y_shift = random.randrange(*y_shift_range) * random.choice((-1, 1))
             rotation = random.randrange(*self._rotate_range)
             matrix = rotation_matrix(rotation / 180 * math.pi) @ translation_matrix(x_shift, y_shift)
-            not_transparent = img > self.transparent_color_range
-            out_img += transform(img * not_transparent, matrix)
+            img[img < self.transparent_color_range] = 0
+            out_img += transform(img, matrix)
             out_label[np.argmax(l)] = self._target_value
 
         return np.clip(out_img, 0, self._max_color_value), out_label
