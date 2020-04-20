@@ -45,13 +45,15 @@ class IrregularSymbolGenerator:
 
         :param Iterable[np.ndarray] images: fg > bg >=0
         :param Iterable[np.ndarray] labels: one hot
-        :param (int, int) size:
+        :param (int, int) size: (height, width)
         :param int categories:
         :return:
         """
         height, width = size
         out_img = np.zeros((height, width, 1))
         out_label = np.zeros((categories,))
+
+        center = (size[1] // 2, size[0] // 2)
 
         x_shift_range = np.round(np.array(self._x_shift_range) * width).tolist()
         y_shift_range = np.round(np.array(self._y_shift_range) * width).tolist()
@@ -60,7 +62,7 @@ class IrregularSymbolGenerator:
             x_shift = random.randrange(*x_shift_range) * random.choice((-1, 1))
             y_shift = random.randrange(*y_shift_range) * random.choice((-1, 1))
             rotation = random.randrange(*self._rotate_range)
-            matrix = rotation_matrix(rotation / 180 * math.pi) @ translation_matrix(x_shift, y_shift)
+            matrix = rotation_matrix(rotation / 180 * math.pi, center) @ translation_matrix((x_shift, y_shift))
             img[img < self.transparent_color_range] = 0
             out_img += transform(img, matrix)
             out_label[np.argmax(l)] = self._target_value

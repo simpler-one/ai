@@ -3,36 +3,42 @@ import numpy as np
 
 def transform(image, affine_matrix):
     height, width = image.shape[:2]
-    half_w = width / 2
-    half_h = height / 2
-    x = np.tile(np.linspace(-half_w, half_w, width).reshape(1, -1), (height, 1))
-    y = np.tile(np.linspace(-half_h, half_h, height).reshape(-1, 1), (1, width))
+    x = np.tile(np.linspace(0, width, width).reshape(1, -1), (height, 1))
+    y = np.tile(np.linspace(0, height, height).reshape(-1, 1), (1, width))
     xy = np.array([[x, y, np.ones(x.shape)]])
 
-    dx, dy, _ = np.sum(xy * affine_matrix[..., None, None], axis=1)
-    x_index = np.clip(dx + half_w, 0, width - 1).astype('i')
-    y_index = np.clip(dy + half_h, 0, height - 1).astype('i')
+    mat = np.linalg.inv(affine_matrix)[..., None, None]
+    dx, dy, _ = np.sum(xy * mat, axis=1)
+    x_index = np.clip(dx, 0, width - 1).astype('i')
+    y_index = np.clip(dy, 0, height - 1).astype('i')
     return image[y_index, x_index]
 
 
-def translation_matrix(delta_x, delta_y):
+def translation_matrix(delta):
     """
 
-    :param int delta_x:
-    :param int delta_y:
+    :param (int, int) delta: (x, y)
     :return:
     """
+    dx, dy = delta
     return np.array([
-        [1, 0, -delta_x],
-        [0, 1, -delta_y],
+        [1, 0, dx],
+        [0, 1, dy],
         [0, 0, 1]
     ])
 
 
-def rotation_matrix(radian):
+def rotation_matrix(radian, anchor=(0, 0)):
+    """
+
+    :param float radian:
+    :param (int, int) anchor: (x, y)
+    :return:
+    """
+    ax, ay = anchor
     return np.array([
-        [np.cos(radian), -np.sin(radian), 0],
-        [np.sin(radian), np.cos(radian),  0],
+        [np.cos(radian), -np.sin(radian), ax - ax * np.cos(radian) + ay * np.sin(radian)],
+        [np.sin(radian), np.cos(radian),  ay - ax * np.sin(radian) - ay * np.cos(radian)],
         [0,              0,               1]
     ])
 
@@ -45,15 +51,30 @@ def shear_matrix(mx, my):
     ])
 
 
-def zoom_matrix(zoom_x, zoom_y):
+def zoom_matrix(zoom, anchor=(0, 0)):
     """
 
-    :param float zoom_x:
-    :param float zoom_y:
+    :param (float, float) zoom: (x, y)
+    :param (int, int) anchor: (x, y)
     :return:
     """
+    zx, zy = zoom
+    ax, ay = anchor
     return np.array([
-        [1 / zoom_x, 0,          0],
-        [0,          1 / zoom_y, 0],
-        [0,          0,          1]
+        [zx, 0,      -ax * zx + ax],
+        [0,      zy, -ay * zy + ay],
+        [0,      0,  1]
     ])
+# def zoom_matrix(zoom, anchor=(0, 0)):
+#     """
+#
+#     :param (float, float) zoom: (x, y)
+#     :param (int, int) anchor: (x, y)
+#     :return:
+#     """
+#     zx, zy = zoom
+#     return np.array([
+#         [1 / zx, 0,      0],
+#         [0,      1 / zy, 0],
+#         [0,      0,      1]
+#     ])
