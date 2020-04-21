@@ -1,26 +1,34 @@
 import numpy as np
+import tensorflow as tf
 
 
-def transform(image, affine_matrix, image_x_axis=1):
+def base_transform_map(size, dtype="float32"):
     """
 
-    :param np.ndarray[float or int] image: [X/Y, X/Y] or [X/Y, X/Y, C]
-    :param np.ndarray[float] affine_matrix:
-    :param int image_x_axis: (0 or 1)
+    :param (int, int) size: (height, width)
+    :param Any dtype:
+    :return:
+    """
+    height, width = size
+    x = np.tile(np.linspace(0, width, width).reshape(1, -1), (height, 1))
+    y = np.tile(np.linspace(0, height, height).reshape(-1, 1), (1, width))
+    return tf.constant([[x, y, np.ones(x.shape)]], dtype)
+
+
+def transform(image, base_map, affine_matrix):
+    """
+
+    :param tf.Tensor[float] image: [X/Y, X/Y] or [X/Y, X/Y, C]
+    :param tf.Tensor[float] base_map:
+    :param tf.Tensor[float] affine_matrix:
     :return:
     """
     height, width = image.shape[:2]
-    x = np.tile(np.linspace(0, width, width).reshape(1, -1), (height, 1))
-    y = np.tile(np.linspace(0, height, height).reshape(-1, 1), (1, width))
-    xy = np.array([[x, y, np.ones(x.shape)]])
-
     mat = np.linalg.inv(affine_matrix)[..., None, None]
-    dx, dy, _ = np.sum(xy * mat, axis=1)
-    index_map = (
-        np.clip(dx, 0, width - 1).astype('i'),
-        np.clip(dy, 0, height - 1).astype('i')
-    )
-    return image[index_map[image_x_axis], index_map[1 - image_x_axis]]
+    dx, dy, _ = np.sum(base_map * mat, axis=1)
+    x_index = tf.clip_by_value(dx, 0, width - 1).astype('i')
+    y_index = tf.clip_by_value(dy, 0, height - 1).astype('i')
+    return image[y_index, x_index]
 
 
 def translation_matrix(delta):
@@ -30,7 +38,7 @@ def translation_matrix(delta):
     :return:
     """
     dx, dy = delta
-    return np.array([
+    return tf.constant([
         [1, 0, dx],
         [0, 1, dy],
         [0, 0, 1]
@@ -45,9 +53,9 @@ def rotation_matrix(radian, anchor=(0, 0)):
     :return:
     """
     ax, ay = anchor
-    sin = np.sin(radian)
-    cos = np.cos(radian)
-    return np.array([
+    sin = tf.math.sin(radian)
+    cos = tf.math.cos(radian)
+    return tf.constant([
         [cos, -sin, ax - ax * cos + ay * sin],
         [sin, cos,  ay - ax * sin - ay * cos],
         [0,   0,    1]
@@ -55,7 +63,7 @@ def rotation_matrix(radian, anchor=(0, 0)):
 
 
 def shear_matrix(mx, my):
-    return np.array([
+    return tf.constant([
         [1,   -mx, 0],
         [-my, 1,   0],
         [0,   0,   1]
@@ -71,7 +79,7 @@ def zoom_matrix(zoom, anchor=(0, 0)):
     """
     zx, zy = zoom
     ax, ay = anchor
-    return np.array([
+    return tf.constant([
         [zx, 0,      -ax * zx + ax],
         [0,      zy, -ay * zy + ay],
         [0,      0,  1]
