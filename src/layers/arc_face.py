@@ -1,9 +1,10 @@
 import tensorflow as tf
 import keras
 import keras.backend as BE
+from abc import ABC, abstractmethod
 
 
-class ArcFace(keras.layers.Layer):
+class _ArcFaceBase(keras.layers.Layer, ABC):
     def __init__(self, categories, *, margin_penalty=0.50, softmax_factor=30.0, **kwargs):
         """
         :param int categories:
@@ -19,7 +20,7 @@ class ArcFace(keras.layers.Layer):
         feat_vector, targets = inputs
 
         feat_vector = tf.nn.l2_normalize(feat_vector, axis=-1)
-        centroid = tf.reduce_mean(feat_vector[:, :, None] * targets[:, None, :], axis=0)
+        centroid = self._get_centroid(feat_vector, targets)
 
         cos_sim = feat_vector @ centroid
 
@@ -41,3 +42,26 @@ class ArcFace(keras.layers.Layer):
             "margin_penalty": self._margin_penalty,
             "softmax_factor": self._softmax_factor,
         }
+
+    @abstractmethod
+    def _get_centroid(self, feat_vector, targets):
+        return tf.reduce_sum(feat_vector[:, :, None] * targets[:, None, :], axis=0) / tf.reduce_sum(targets, axis=0)
+
+
+class ArcFace(_ArcFaceBase):
+    def __init__(self, categories, *, margin_penalty=0.50, softmax_factor=30.0, **kwargs):
+        super().__init__(categories, margin_penalty=margin_penalty, softmax_factor=softmax_factor, **kwargs)
+        self._centroid = tf.zeros((0,))
+
+    def build(self, input_shape):
+        self._centroid = self.add_weight(
+            "centroid", (input_shape[0][-1], self._categories), initializer='glorot_uniform'
+        )
+
+    def _get_centroid(self, feat_vector, targets):
+        return tf.nn.l2_normalize(self._centroid, axis=0)
+
+
+class CentroidArcFace(_ArcFaceBase):
+    def _get_centroid(self, feat_vector, targets):
+        return tf.reduce_sum(feat_vector[:, :, None] * targets[:, None, :], axis=0) / tf.reduce_sum(targets, axis=0)

@@ -1,7 +1,14 @@
 import numpy as np
 
 
-def transform(image, affine_matrix):
+def transform(image, affine_matrix, image_x_axis=1):
+    """
+
+    :param np.ndarray[float or int] image: [X/Y, X/Y] or [X/Y, X/Y, C]
+    :param np.ndarray[float] affine_matrix:
+    :param int image_x_axis: (0 or 1)
+    :return:
+    """
     height, width = image.shape[:2]
     x = np.tile(np.linspace(0, width, width).reshape(1, -1), (height, 1))
     y = np.tile(np.linspace(0, height, height).reshape(-1, 1), (1, width))
@@ -9,9 +16,11 @@ def transform(image, affine_matrix):
 
     mat = np.linalg.inv(affine_matrix)[..., None, None]
     dx, dy, _ = np.sum(xy * mat, axis=1)
-    x_index = np.clip(dx, 0, width - 1).astype('i')
-    y_index = np.clip(dy, 0, height - 1).astype('i')
-    return image[y_index, x_index]
+    index_map = (
+        np.clip(dx, 0, width - 1).astype('i'),
+        np.clip(dy, 0, height - 1).astype('i')
+    )
+    return image[index_map[image_x_axis], index_map[1 - image_x_axis]]
 
 
 def translation_matrix(delta):
@@ -65,16 +74,3 @@ def zoom_matrix(zoom, anchor=(0, 0)):
         [0,      zy, -ay * zy + ay],
         [0,      0,  1]
     ])
-# def zoom_matrix(zoom, anchor=(0, 0)):
-#     """
-#
-#     :param (float, float) zoom: (x, y)
-#     :param (int, int) anchor: (x, y)
-#     :return:
-#     """
-#     zx, zy = zoom
-#     return np.array([
-#         [1 / zx, 0,      0],
-#         [0,      1 / zy, 0],
-#         [0,      0,      1]
-#     ])

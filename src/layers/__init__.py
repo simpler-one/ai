@@ -1,1 +1,1 @@
-from .arc_face import ArcFace
+from .arc_face import ArcFace, CentroidArcFace
