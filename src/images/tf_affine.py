@@ -31,9 +31,7 @@ def transform(image, base_map, affine_matrix):
     dy = indices[1]
     x_index = tf.cast(tf.clip_by_value(dx, 0, np.int32(width) - 1), "int32")
     y_index = tf.cast(tf.clip_by_value(dy, 0, np.int32(height) - 1), "int32")
-    print(x_index)
-    print(y_index)
-    return image[y_index, x_index]
+    return tf.gather_nd(image, tf.stack([y_index, x_index], axis=-1))
 
 
 def translation_matrix(delta):
