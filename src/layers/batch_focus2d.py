@@ -32,8 +32,8 @@ class BatchFocus2D(BaseFocus2D):
 
         def batch_loop(batch_tensor):
             (x_min, y_min), (x_max, y_max) = self._detect_rect(batch_tensor)
-            trim_w = tf.cast(x_max - x_min, FLOAT)
-            trim_h = tf.cast(y_max - y_min, FLOAT)
+            trim_w = tf.cast(x_max - x_min + 1, FLOAT)
+            trim_h = tf.cast(y_max - y_min + 1, FLOAT)
 
             def focus():
                 zoom = tf.minimum(zoom_w / trim_w, zoom_h / trim_h)
