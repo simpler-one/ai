@@ -1,5 +1,4 @@
 import tensorflow as tf
-import keras
 from layers.base_focus2d import BaseFocus2D, INT
 from images.tf_affine import transform, base_transform_map, translation_matrix, zoom_matrix
 
@@ -63,8 +62,8 @@ class BatchFocus2D(BaseFocus2D):
         x_scan = tf.cast(tf.math.sigmoid(x_scan) + self._shift, INT)  # 0 or 1
         y_scan = tf.cast(tf.math.sigmoid(y_scan) + self._shift, INT)  # 0 or 1
 
-        x_min = tf.argmax(x_scan * self._x_min_weight, axis=0, output_type=INT)
-        y_min = tf.argmax(y_scan * self._y_min_weight, axis=0, output_type=INT)
+        x_min = tf.argmax(x_scan, axis=0, output_type=INT)
+        y_min = tf.argmax(y_scan, axis=0, output_type=INT)
         x_max = tf.reduce_max(x_scan * self._x_max_weight, axis=0)
         y_max = tf.reduce_max(y_scan * self._y_max_weight, axis=0)
 
