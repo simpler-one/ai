@@ -37,8 +37,8 @@ class BatchFocus2D(BaseFocus2D):
 
             def focus():
                 zoom = tf.minimum(zoom_w / trim_w, zoom_h / trim_h)
-                shift_x = tf.cast(x_min, FLOAT) - (zoom_w / zoom - trim_w) / 2
-                shift_y = tf.cast(y_min, FLOAT) - (zoom_h / zoom - trim_h) / 2
+                shift_x = tf.cast(x_min - self._pad, FLOAT) - (zoom_w / zoom - trim_w) / 2
+                shift_y = tf.cast(y_min - self._pad, FLOAT) - (zoom_h / zoom - trim_h) / 2
                 affine = zoom_matrix((zoom, zoom)) @ translation_matrix((-shift_x, -shift_y))
                 return transform(batch_tensor, self._base_affine_map, affine)
 
