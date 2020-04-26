@@ -8,6 +8,7 @@ from .affine import transform, rotation_matrix, translation_matrix, zoom_matrix,
 class IrregularSymbolGenerator:
     def __init__(
         self, *,
+        n_mix_range=(3, 6),
         max_color_value=1.0,
         transparent_color_range=0.1,
         x_shift_range=(0.1, 0.5), y_shift_range=(0.1, 0.5),
@@ -15,6 +16,7 @@ class IrregularSymbolGenerator:
         target_value=0.2, noise_patterns=(),
     ):
         """
+        :param (int, int) n_mix_range:
         :param float max_color_value: eg: 255, 1.0
         :param float transparent_color_range:
         :param (int, int) x_shift_range: (0 - width, 0 - width)
@@ -23,6 +25,7 @@ class IrregularSymbolGenerator:
         :param float target_value: (0 - 1.0)
         :param noise_patterns:
         """
+        self._n_mix_range = n_mix_range
         self._max_color_value = max_color_value
         self.transparent_color_range = transparent_color_range
         self._x_shift_range = x_shift_range
@@ -38,20 +41,28 @@ class IrregularSymbolGenerator:
         :param np.ndarray labels: one hot
         :return:
         """
-        pass
+        n_mix = random.randrange(self._n_mix_range[0], self._n_mix_range[1])
+        indices = [random.randrange(images.shape[0]) for _ in range(n_mix)]
 
-    def generate_from_all(self, images, labels, size, categories):
+        return self.generate_one_from_all(
+            (images[i] for i in indices),
+            (labels[i] for i in indices),
+            images.shape[1:3],
+            labels.shape[-1]
+        )
+
+    def generate_one_from_all(self, images, labels, size, n_categories):
         """
 
         :param Iterable[np.ndarray] images: fg > bg >=0
         :param Iterable[np.ndarray] labels: one hot
         :param (int, int) size: (height, width)
-        :param int categories:
+        :param int n_categories:
         :return:
         """
         height, width = size
         out_img = np.zeros((height, width, 1))
-        out_label = np.zeros((categories,))
+        out_label = np.zeros((n_categories,))
 
         center = (size[1] // 2, size[0] // 2)
 

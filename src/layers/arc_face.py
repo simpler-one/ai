@@ -1,3 +1,4 @@
+import math
 import tensorflow as tf
 import keras
 import keras.backend as BE
@@ -5,16 +6,16 @@ from abc import ABC, abstractmethod
 
 
 class _ArcFaceBase(keras.layers.Layer, ABC):
-    def __init__(self, categories, *, margin_penalty=0.50, softmax_factor=30.0, **kwargs):
+    def __init__(self, n_categories, *, margin_penalty=0.50, softmax_factor=None, **kwargs):
         """
-        :param int categories:
-        :param float softmax_factor:
+        :param int n_categories:
+        :param float softmax_factor: Recommend: 30.0
         :param float margin_penalty:
         """
         super().__init__(**kwargs)
-        self._categories = categories
+        self._categories = n_categories
         self._margin_penalty = margin_penalty
-        self._softmax_factor = softmax_factor
+        self._softmax_factor = math.sqrt(2) * math.log(n_categories - 1) if softmax_factor is None else softmax_factor
 
     def call(self, inputs, *kwargs):
         feat_vector, targets = inputs
@@ -38,7 +39,7 @@ class _ArcFaceBase(keras.layers.Layer, ABC):
     def get_config(self):
         return {
             **super().get_config(),
-            "categories": self._categories,
+            "n_categories": self._categories,
             "margin_penalty": self._margin_penalty,
             "softmax_factor": self._softmax_factor,
         }
@@ -49,8 +50,8 @@ class _ArcFaceBase(keras.layers.Layer, ABC):
 
 
 class ArcFace(_ArcFaceBase):
-    def __init__(self, categories, *, margin_penalty=0.50, softmax_factor=30.0, **kwargs):
-        super().__init__(categories, margin_penalty=margin_penalty, softmax_factor=softmax_factor, **kwargs)
+    def __init__(self, n_categories, *, margin_penalty=0.50, softmax_factor=None, **kwargs):
+        super().__init__(n_categories, margin_penalty=margin_penalty, softmax_factor=softmax_factor, **kwargs)
         self._centroid = tf.zeros((0,))
 
     def build(self, input_shape):
@@ -62,6 +63,6 @@ class ArcFace(_ArcFaceBase):
         return tf.nn.l2_normalize(self._centroid, axis=0)
 
 
-class CentroidArcFace(_ArcFaceBase):
+class BatchCentroidArcFace(_ArcFaceBase):
     def _get_centroid(self, feat_vector, targets):
         return tf.reduce_sum(feat_vector[:, :, None] * targets[:, None, :], axis=0) / tf.reduce_sum(targets, axis=0)
