@@ -8,10 +8,10 @@ from .affine import transform, rotation_matrix, translation_matrix, zoom_matrix,
 class IrregularSymbolGenerator:
     def __init__(
         self, *,
-        n_mix_range=(3, 6),
+        n_mix_range=(2, 5),
         max_color_value=1.0,
         transparent_color_range=0.1,
-        x_shift_range=(0.1, 0.5), y_shift_range=(0.1, 0.5),
+        x_shift_range=(0.1, 0.33), y_shift_range=(0.1, 0.33),
         rotate_range=(45, 315),
         target_value=0.2, noise_patterns=(),
     ):

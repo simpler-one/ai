@@ -17,34 +17,36 @@ def main():
     (train_data, train_target), (test_data, test_target) = mnist.load_data()
     train_data = train_data[..., None] / 255
     test_data = test_data[..., None] / 255
-    train_target = keras.utils.to_categorical(train_target)
-    test_target = keras.utils.to_categorical(test_target)
+    train_target = keras.utils.to_categorical(train_target, CATEGORIES)
+    test_target = keras.utils.to_categorical(test_target, CATEGORIES)
 
     irr_gen = IrregularSymbolGenerator()
-    irr_data_list = []
-    irr_target_list = []
-
-    for _ in range(round(train_data.shape[0] * 0.10)):
-        irr_data, irr_target = irr_gen.generate_from(train_data, train_target)
-        irr_data_list.append(irr_data)
-        irr_target_list.append(irr_target)
-
-    train_data = np.concatenate([train_data, np.stack(irr_data_list)])
-    train_target = np.concatenate([train_target, np.stack(irr_target_list)])
 
     model = create_model(train_data.shape[1:])
     apply_transfer_learning(model)
     model.compile(optimizer="adam", loss="categorical_crossentropy", metrics=["acc"])
     model.summary()
 
-    model.fit(
-        [train_data, train_target], train_target,
-        validation_data=([test_data, test_target], test_target),
-        epochs=60,
-        callbacks=[keras.callbacks.EarlyStopping("val_loss", patience=10, restore_best_weights=True)],
-        batch_size=128,
-        verbose=2
-    )
+    for i in range(10):
+        irr_data_list = []
+        irr_target_list = []
+
+        for _ in range(round(train_data.shape[0] * 0.05)):
+            irr_data, irr_target = irr_gen.generate_from(train_data, train_target)
+            irr_data_list.append(irr_data)
+            irr_target_list.append(irr_target)
+
+        train_data = np.concatenate([train_data, np.stack(irr_data_list)])
+        train_target = np.concatenate([train_target, np.stack(irr_target_list)])
+
+        model.fit(
+            [train_data, train_target], train_target,
+            validation_data=([test_data, test_target], test_target),
+            initial_epoch=i * 3, epochs=(i + 1) * 3,
+            callbacks=[keras.callbacks.EarlyStopping("val_loss", patience=10, restore_best_weights=True)],
+            batch_size=128,
+            verbose=2
+        )
 
     centroid = model.layers[-1].get_weights()[0]
 

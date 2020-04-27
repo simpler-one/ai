@@ -18,38 +18,40 @@ KANA_VARIATION = 72
 
 def read_files_etl8g(file_path_list, output_size=(IMAGE_WIDTH, IMAGE_HEIGHT)):
     data = []
-    target = []
+    labels = []
 
     for path in file_path_list:
-        cur_data, cur_target = read_file_etl8g(path, output_size)
+        cur_data, cur_label = read_file_etl8g(path, output_size)
         data.extend(cur_data)
-        target.extend(cur_target)
+        labels.extend(cur_label)
 
-    return data, target
+    return data, labels
 
 
 def read_file_etl8g(file_path, output_size=(IMAGE_WIDTH, IMAGE_HEIGHT)):
     data = []
-    target = []
+    labels = []
 
     with open(file_path, "rb") as file:
         for i in range(DATA_SET_LENGTH):
-            cur_data, cur_target = read_category_etl8g(file, output_size)
+            cur_data, cur_label = read_category_etl8g(file, output_size)
             data.extend(cur_data)
-            target.extend(target)
+            labels.extend(cur_label)
 
-    return data, target
+    return data, labels
 
 
 def read_category_etl8g(file_stream, output_size=(IMAGE_WIDTH, IMAGE_HEIGHT), rescale=4.0):
     data = []
+    labels = []
 
     for i in range(CATEGORY_VARIATION):
         cur_data, label = read_record_etl8g(file_stream, output_size)
         if b".HIRA" in label:
             data.append(np.clip(np.array(cur_data) * BASIC_RESCALE * rescale, 0, 255))
+            labels.append(label.decode())
 
-    return data, list(range(KANA_VARIATION))
+    return data, labels
 
 
 def read_record_etl8g(file_stream, output_size=(IMAGE_WIDTH, IMAGE_HEIGHT)):
