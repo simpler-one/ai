@@ -1,6 +1,6 @@
 import numpy as np
-import keras
-from keras.datasets import mnist
+from tensorflow import keras
+from tensorflow.keras.datasets import mnist
 from etl8g import read_files_etl8g
 from layers import StaticCosineSimilarity
 
@@ -17,10 +17,10 @@ def main():
     test_data = test_data[..., None] / 255
     test_target = keras.utils.to_categorical(test_target)
 
-    irr_data_list, _ = read_files_etl8g(["./data/ETL8G/ETL8G_01"], (28, 28))
+    irr_data_list, irr_label_list = read_files_etl8g(["./data/ETL8G/ETL8G_01"], (28, 28))
     irr_data = np.array(irr_data_list)[..., None] / 255
 
-    model = keras.models.load_model(NORMAL_MODEL_PATH, custom_objects=CUSTOM_LAYERS)
+    model = keras.models.load_model(PLUS_MODEL_PATH, custom_objects=CUSTOM_LAYERS)
 
     loss, acc = model.evaluate(test_data, test_target, batch_size=128, verbose=0)
     print(f"acc: {acc:.2%}, loss: {loss:.4g}")
@@ -42,6 +42,15 @@ def main():
     print("\n-- Irregular cosine similarity --")
     print(f"avg: {irr_prb_avg}")
     print(f"percentiles(95-5, 5): {irr_prb_overview}")
+
+    irr_prob_index_list = sorted(enumerate(irr_prb_list), key=lambda item: item[1], reverse=True)
+    for irr_prob_i in irr_prob_index_list:
+        i, _ = irr_prob_i
+        # d = irr_data_list[i]
+        label: str = irr_label_list[i]
+        prediction = irr_predictions[i]
+        prb_category: int = np.argmax(prediction)
+        print(f"{label:.10} -> {prb_category} ({prediction[prb_category]:.2g})")
 
 
 # -----

@@ -1,6 +1,6 @@
 import numpy as np
-import keras
-from keras import backend as BE
+from tensorflow import keras
+from tensorflow.keras import backend
 from abc import ABC
 
 INT = "int32"
@@ -40,10 +40,10 @@ class BaseFocus2D(keras.layers.Layer, ABC):
         self._hgt = np.int32(input_shape[1])
         self._min_size = (self._ignore_small[0] * self._hgt, self._ignore_small[1] * self._wid)
         self._max_size = (self._ignore_large[0] * self._hgt, self._ignore_large[1] * self._wid)
-        self._x_min_weight = BE.constant(self._reshape_weight(np.arange(self._wid - 1, -1, -1)), dtype=INT)
-        self._y_min_weight = BE.constant(self._reshape_weight(np.arange(self._hgt - 1, -1, -1)), dtype=INT)
-        self._x_max_weight = BE.constant(self._reshape_weight(np.arange(self._wid)), dtype=INT)
-        self._y_max_weight = BE.constant(self._reshape_weight(np.arange(self._hgt)), dtype=INT)
+        self._x_min_weight = backend.constant(self._reshape_weight(np.arange(self._wid - 1, -1, -1)), dtype=INT)
+        self._y_min_weight = backend.constant(self._reshape_weight(np.arange(self._hgt - 1, -1, -1)), dtype=INT)
+        self._x_max_weight = backend.constant(self._reshape_weight(np.arange(self._wid)), dtype=INT)
+        self._y_max_weight = backend.constant(self._reshape_weight(np.arange(self._hgt)), dtype=INT)
 
     def get_config(self):
         return {

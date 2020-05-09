@@ -1,9 +1,9 @@
 import numpy as np
-import keras
+from tensorflow import keras
+from tensorflow.keras.datasets import mnist
 from images.irregular_symbol_generator import IrregularSymbolGenerator
 from layers import ArcFace, StaticCosineSimilarity
 import os
-from keras.datasets import mnist
 
 BASE_MODEL_PATH = "./output/mnist-base.h5"
 SAVE_MODEL_PATH = "./output/mnist.h5"

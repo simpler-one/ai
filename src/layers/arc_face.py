@@ -1,7 +1,7 @@
 import math
 import tensorflow as tf
-import keras
-import keras.backend as BE
+from tensorflow import keras
+from tensorflow.keras import backend
 from abc import ABC, abstractmethod
 
 
@@ -27,7 +27,7 @@ class _ArcFaceBase(keras.layers.Layer, ABC):
 
         # add margin
         # clip cos-sim to prevent zero division when backward
-        theta = tf.acos(BE.clip(cos_sim, -1.0 + BE.epsilon(), 1.0 - BE.epsilon()))
+        theta = tf.acos(backend.clip(cos_sim, -1.0 + backend.epsilon(), 1.0 - backend.epsilon()))
         target_cos_sim = tf.cos(theta + self._margin_penalty)
 
         cos_sim = cos_sim * (1 - targets) + target_cos_sim * targets

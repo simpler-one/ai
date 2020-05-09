@@ -1,7 +1,7 @@
 import numpy as np
 import tensorflow as tf
-import keras
-from keras import backend
+from tensorflow import keras
+from tensorflow.keras import backend
 
 
 class StaticCosineSimilarity(keras.layers.Layer):
